@@ -12,6 +12,14 @@ class _MineStore extends State<MineStore> {
   final _formKey = GlobalKey<FormState>();
   String? size;
 
+  bool _validateNumber(String value) {
+    if (value.isEmpty) {
+      return false;
+    }
+    final number = num.tryParse(value);
+    return number != null && number > 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,22 +46,33 @@ class _MineStore extends State<MineStore> {
                         builder: (context) {
                           return AlertDialog(
                             title: const Text('请输入扫雷宽度'),
-                            content: TextField(
-                              controller: controller,
-                              keyboardType: TextInputType.number,
+                            content: Form(
+                              key: _formKey,
+                              child: TextFormField(
+                                controller: controller,
+                                keyboardType: TextInputType.number,
+                                validator: (value) {
+                                  if (!_validateNumber(value!)) {
+                                    return '请输入有效的数字';
+                                  }
+                                  return null;
+                                },
+                              ),
                             ),
                             actions: <Widget>[
                               TextButton(
                                 child: const Text('确定'),
                                 onPressed: () {
-                                  size = controller.text;
-                                  Navigator.of(context).pop();
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            MineSweeping(size: size)),
-                                  );
+                                  if (_formKey.currentState!.validate()) {
+                                    size = controller.text;
+                                    Navigator.of(context).pop();
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              MineSweeping(size: size)),
+                                    );
+                                  }
                                 },
                               ),
                             ],
