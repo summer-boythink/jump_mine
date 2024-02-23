@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:mine_sweeping/model/game_setting.dart';
 import 'package:mine_sweeping/widget/block_container.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum BlockType {
   //数字
@@ -18,8 +20,8 @@ enum BlockType {
 
 class MineSweeping extends StatefulWidget {
   final String? size;
-
-  const MineSweeping({Key? key, this.size}) : super(key: key);
+  final int? index;
+  const MineSweeping({Key? key, this.size, this.index}) : super(key: key);
 
   @override
   State<MineSweeping> createState() => _MineSweepingState();
@@ -46,7 +48,7 @@ class _MineSweepingState extends State<MineSweeping> {
   }
 
   Timer? _timer;
-  final List<AlertDialog?> _dialog = [];
+  late final List<AlertDialog?> _dialog = List.filled(2, null);
 
   ///重置游戏
   void reset() {
@@ -143,12 +145,12 @@ class _MineSweepingState extends State<MineSweeping> {
           gameOver = true;
           _timer?.cancel();
           _dialog[0] = AlertDialog(
-            title: const Text('O!'),
-            content: const Text('You lose!'),
+            title: const Text('失败!'),
+            content: const Text('踩到雷啦！'),
             actions: [
               TextButton(
                 onPressed: reset,
-                child: const Text('Play Again'),
+                child: const Text('再玩一次'),
               ),
             ],
           );
@@ -173,12 +175,12 @@ class _MineSweepingState extends State<MineSweeping> {
           gameOver = true;
           _timer?.cancel();
           _dialog[1] = AlertDialog(
-            title: const Text('Congratulations!'),
-            content: const Text('You win!'),
+            title: const Text('成功！'),
+            content: const Text('恭喜你!'),
             actions: [
               TextButton(
                 onPressed: reset,
-                child: const Text('Play Again'),
+                child: const Text('再玩一次'),
               ),
             ],
           );
@@ -211,10 +213,18 @@ class _MineSweepingState extends State<MineSweeping> {
 
   ///标记雷
   void toggleFlag(int i, int j) {
+    if (revealed[i][j]) {
+      return;
+    }
     if (!gameOver) {
       setState(() {
         flagged[i][j] = !flagged[i][j];
       });
+      if (!flagged[i][j]) {
+        numMines++;
+      } else {
+        numMines--;
+      }
     }
   }
 
@@ -229,7 +239,7 @@ class _MineSweepingState extends State<MineSweeping> {
     setState(() {
       gameSetting.themeColor = color;
     });
-    reset();
+    // reset();
   }
 
   void setting() {
@@ -242,9 +252,11 @@ class _MineSweepingState extends State<MineSweeping> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 24, child: Text('游戏主题颜色：')),
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: const SizedBox(height: 24, child: Text('游戏主题颜色：')),
+                ),
                 Row(
-                  // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     GestureDetector(
                       onTap: () => changeThemeColor(const Color(0xFF5ADFD0)),
@@ -256,9 +268,7 @@ class _MineSweepingState extends State<MineSweeping> {
                         ),
                       ),
                     ),
-                    const SizedBox(
-                      width: 12,
-                    ),
+                    const SizedBox(width: 12),
                     GestureDetector(
                       onTap: () => changeThemeColor(const Color(0xFFA0BBFF)),
                       child: const SizedBox(
@@ -268,6 +278,25 @@ class _MineSweepingState extends State<MineSweeping> {
                           color: Color(0xFFA0BBFF),
                         ),
                       ),
+                    ),
+                  ],
+                ),
+                const SizedBox(
+                    height: 12), // Add spacing between buttons and content
+                Row(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        store();
+                      },
+                      child: const Text('存档'),
+                    ),
+                    const SizedBox(width: 12),
+                    ElevatedButton(
+                      onPressed: () {
+                        reset();
+                      },
+                      child: const Text('重置'),
                     ),
                   ],
                 ),
@@ -390,5 +419,27 @@ class _MineSweepingState extends State<MineSweeping> {
         ],
       ),
     );
+  }
+
+  Future<void> store() async {
+    // final prefs = await SharedPreferences.getInstance();
+    // List<String>? boardJsonList = prefs.getStringList('board');
+    // List<String>? revealedJsonList = prefs.getStringList('revealed');
+    // List<String>? flaggedJsonList = prefs.getStringList('flagged');
+
+    // setState(() {
+    //   // 将二维列表转换为 Json 字符串
+    //   String boardJson = json.encode(board);
+    //   String revealedJson = json.encode(revealed);
+    //   String flaggedJson = json.encode(flagged);
+
+    //   boardJsonList?[widget.index!] = boardJson;
+    //   revealedJsonList?[widget.index!] = revealedJson;
+    //   flaggedJsonList?[widget.index!] = flaggedJson;
+
+    //   prefs.setStringList('board', boardJsonList!);
+    //   prefs.setStringList('revealed', revealedJsonList!);
+    //   prefs.setStringList('flagged', flaggedJsonList!);
+    // });
   }
 }
