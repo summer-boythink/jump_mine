@@ -2,18 +2,18 @@ import 'package:flutter/material.dart';
 
 class GameSetting {
   List<Color> c_5ADFD0 = [
-    Color(0xFF299794),
-    Color(0xFF2EC4C0),
-    Color(0xFF2EC4C0)
+    const Color(0xFF299794),
+    const Color(0xFF2EC4C0),
+    const Color(0xFF2EC4C0)
   ];
 
   List<Color> c_A0BBFF = [
-    Color(0xFF5067C5),
-    Color(0xFF838CFF),
-    Color(0xFFA0BBFF),
+    const Color(0xFF5067C5),
+    const Color(0xFF838CFF),
+    const Color(0xFFA0BBFF),
   ];
 
-  Color themeColor = Color(0xFF5ADFD0);
+  Color themeColor = const Color(0xFF5ADFD0);
 
   ///游戏的难度，默认为8*8
   int difficulty = 8;

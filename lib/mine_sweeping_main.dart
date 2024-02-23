@@ -17,7 +17,9 @@ enum BlockType {
 }
 
 class MineSweeping extends StatefulWidget {
-  const MineSweeping({Key? key, String? size}) : super(key: key);
+  final String? size;
+
+  const MineSweeping({Key? key, this.size}) : super(key: key);
 
   @override
   State<MineSweeping> createState() => _MineSweepingState();
@@ -29,8 +31,7 @@ class _MineSweepingState extends State<MineSweeping> {
   late List<List<bool>> revealed; // 记录格子是否被翻开
   late List<List<bool>> flagged; // 记录格子是否被标记
   late bool gameOver; // 游戏是否结束
-  late bool win; // 是否获胜\
-
+  late bool win; // 是否获胜
   late int numRows; // 行数
   late int numCols; // 列数
   late int numMines; // 雷数
@@ -45,7 +46,7 @@ class _MineSweepingState extends State<MineSweeping> {
   }
 
   Timer? _timer;
-  List<AlertDialog?> _dialog = [];
+  final List<AlertDialog?> _dialog = [];
 
   ///重置游戏
   void reset() {
@@ -57,9 +58,9 @@ class _MineSweepingState extends State<MineSweeping> {
     }
 
     setState(() {
-      numRows = gameSetting.difficulty;
-      numCols = gameSetting.difficulty;
-      numMines = gameSetting.mines;
+      numRows = int.parse(widget.size!);
+      numCols = int.parse(widget.size!);
+      numMines = (numCols * numRows * 0.18).floor();
       // 初始化棋盘
       board = List.generate(numRows, (_) => List.filled(numCols, 0));
       // 初始化格子是否被翻开
@@ -121,6 +122,8 @@ class _MineSweepingState extends State<MineSweeping> {
   }
 
   void reveal(int i, int j) {
+    if (gameOver) return;
+
     if (!revealed[i][j]) {
       setState(() {
         //将该格子设置为翻开
@@ -140,12 +143,12 @@ class _MineSweepingState extends State<MineSweeping> {
           gameOver = true;
           _timer?.cancel();
           _dialog[0] = AlertDialog(
-            title: Text('O!'),
-            content: Text('You lose!'),
+            title: const Text('O!'),
+            content: const Text('You lose!'),
             actions: [
               TextButton(
                 onPressed: reset,
-                child: Text('Play Again'),
+                child: const Text('Play Again'),
               ),
             ],
           );
@@ -170,12 +173,12 @@ class _MineSweepingState extends State<MineSweeping> {
           gameOver = true;
           _timer?.cancel();
           _dialog[1] = AlertDialog(
-            title: Text('Congratulations!'),
-            content: Text('You win!'),
+            title: const Text('Congratulations!'),
+            content: const Text('You win!'),
             actions: [
               TextButton(
                 onPressed: reset,
-                child: Text('Play Again'),
+                child: const Text('Play Again'),
               ),
             ],
           );
@@ -234,7 +237,7 @@ class _MineSweepingState extends State<MineSweeping> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Game Setting!'),
+          title: const Text('设置'),
           content: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -244,7 +247,7 @@ class _MineSweepingState extends State<MineSweeping> {
                   // mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     GestureDetector(
-                      onTap: () => changeThemeColor(Color(0xFF5ADFD0)),
+                      onTap: () => changeThemeColor(const Color(0xFF5ADFD0)),
                       child: const SizedBox(
                         width: 50,
                         height: 50,
@@ -257,7 +260,7 @@ class _MineSweepingState extends State<MineSweeping> {
                       width: 12,
                     ),
                     GestureDetector(
-                      onTap: () => changeThemeColor(Color(0xFFA0BBFF)),
+                      onTap: () => changeThemeColor(const Color(0xFFA0BBFF)),
                       child: const SizedBox(
                         width: 50,
                         height: 50,
@@ -268,42 +271,6 @@ class _MineSweepingState extends State<MineSweeping> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24, child: Text('游戏难度：')),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    GestureDetector(
-                      onTap: () => changeDifficulty(8),
-                      child: Container(
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(color: Color(0xFFA0BBFF)),
-                        width: 50,
-                        height: 50,
-                        child: Text("新手"),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => changeDifficulty(12),
-                      child: Container(
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(color: Color(0xFFEF9A0D)),
-                        width: 50,
-                        height: 50,
-                        child: Text("熟练"),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () => changeDifficulty(16),
-                      child: Container(
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(color: Color(0xFFCE3C39)),
-                        width: 50,
-                        height: 50,
-                        child: Text("专家"),
-                      ),
-                    )
-                  ],
-                )
               ],
             ),
           ),
@@ -335,7 +302,7 @@ class _MineSweepingState extends State<MineSweeping> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Mine Sweeping & Taxze"),
+        title: const Text("跳跳扫雷"),
         centerTitle: true,
         actions: [
           IconButton(
@@ -371,7 +338,7 @@ class _MineSweepingState extends State<MineSweeping> {
                     children: [
                       Image.asset("assets/images/clock.png"),
                       Text(
-                        "$playTime",
+                        playTime,
                         style:
                             const TextStyle(fontSize: 28, color: Colors.white),
                       )
