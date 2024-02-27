@@ -92,6 +92,25 @@ class _MineStore extends State<MineStore> {
                         child: Card(
                           child: flag[index]
                               ? InkWell(
+                                  onLongPress: () async {
+                                    await showDialog(
+                                        context: context,
+                                        builder: (context) {
+                                          return AlertDialog(
+                                            title: const Text('提示'),
+                                            content: Text('是否删除存档${index + 1}'),
+                                            actions: [
+                                              TextButton(
+                                                onPressed: () {
+                                                  deleteIndex(index);
+                                                  Navigator.of(context).pop();
+                                                },
+                                                child: const Text('确认'),
+                                              ),
+                                            ],
+                                          );
+                                        });
+                                  },
                                   onTap: () async {
                                     // 传递data[index]给MineSweeping
                                     Navigator.push(
@@ -103,7 +122,7 @@ class _MineStore extends State<MineStore> {
                                     );
                                   },
                                   child: Center(
-                                    child: Text('存档 $index',
+                                    child: Text('存档 ${index + 1}',
                                         style: const TextStyle(fontSize: 24)),
                                   ),
                                 )
@@ -182,5 +201,43 @@ class _MineStore extends State<MineStore> {
       }
     }
     return true;
+  }
+
+  void deleteIndex(int index) async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String>? boardJsonList = prefs.getStringList('board');
+    List<String>? revealedJsonList = prefs.getStringList('revealed');
+    List<String>? flaggedJsonList = prefs.getStringList('flagged');
+    List<String>? playtimeList = prefs.getStringList('playTime');
+    List<String>? numMinesList = prefs.getStringList('numMines');
+
+    if (boardJsonList != null && index < boardJsonList.length) {
+      boardJsonList[index] = "";
+    }
+
+    if (revealedJsonList != null && index < revealedJsonList.length) {
+      revealedJsonList[index] = "";
+    }
+
+    if (flaggedJsonList != null && index < flaggedJsonList.length) {
+      flaggedJsonList[index] = "";
+    }
+
+    if (playtimeList != null && index < playtimeList.length) {
+      playtimeList[index] = "";
+    }
+
+    if (numMinesList != null && index < numMinesList.length) {
+      numMinesList[index] = "";
+    }
+    setState(() {
+// 保存更新后的 List 到 SharedPreferences
+      prefs.setStringList('board', boardJsonList!);
+      prefs.setStringList('revealed', revealedJsonList!);
+      prefs.setStringList('flagged', flaggedJsonList!);
+      prefs.setStringList('playTime', playtimeList!);
+      prefs.setStringList('numMines', numMinesList!);
+      initializeData();
+    });
   }
 }
