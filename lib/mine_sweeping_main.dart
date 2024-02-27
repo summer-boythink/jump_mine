@@ -19,9 +19,10 @@ enum BlockType {
 }
 
 class MineSweeping extends StatefulWidget {
-  final String? size;
+  String? size;
   final int? index;
-  const MineSweeping({Key? key, this.size, this.index}) : super(key: key);
+  final List<String>? data;
+  MineSweeping({Key? key, this.size, this.index, this.data}) : super(key: key);
 
   @override
   State<MineSweeping> createState() => _MineSweepingState();
@@ -322,9 +323,19 @@ class _MineSweepingState extends State<MineSweeping> {
   }
 
   @override
+  void dispose() {
+    _timer?.cancel(); // 取消定时器
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
-    reset();
+    if (widget.size == null) {
+      reBuild();
+    } else {
+      reset();
+    }
   }
 
   @override
@@ -333,6 +344,16 @@ class _MineSweepingState extends State<MineSweeping> {
       appBar: AppBar(
         title: const Text("跳跳扫雷"),
         centerTitle: true,
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          // 在这里添加自定义的按钮
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            //todo:better pop
+            Navigator.pop(context, true);
+            Navigator.pop(context, true);
+          },
+        ),
         actions: [
           IconButton(
               onPressed: () => setting(), icon: const Icon(Icons.settings))
@@ -422,24 +443,77 @@ class _MineSweepingState extends State<MineSweeping> {
   }
 
   Future<void> store() async {
-    // final prefs = await SharedPreferences.getInstance();
-    // List<String>? boardJsonList = prefs.getStringList('board');
-    // List<String>? revealedJsonList = prefs.getStringList('revealed');
-    // List<String>? flaggedJsonList = prefs.getStringList('flagged');
+    final prefs = await SharedPreferences.getInstance();
+    List<String>? boardJsonList = prefs.getStringList('board');
+    List<String>? revealedJsonList = prefs.getStringList('revealed');
+    List<String>? flaggedJsonList = prefs.getStringList('flagged');
+    List<String>? playtimeList = prefs.getStringList('playTime');
+    List<String>? numMinesList = prefs.getStringList('numMines');
+    setState(() {
+      // 将二维列表转换为 Json 字符串
+      String boardJson = json.encode(board);
+      String revealedJson = json.encode(revealed);
+      String flaggedJson = json.encode(flagged);
 
-    // setState(() {
-    //   // 将二维列表转换为 Json 字符串
-    //   String boardJson = json.encode(board);
-    //   String revealedJson = json.encode(revealed);
-    //   String flaggedJson = json.encode(flagged);
+      boardJsonList?[widget.index!] = boardJson;
+      revealedJsonList?[widget.index!] = revealedJson;
+      flaggedJsonList?[widget.index!] = flaggedJson;
+      playtimeList?[widget.index!] = _playTime.toString();
+      numMinesList?[widget.index!] = numMines.toString();
+      prefs.setStringList('board', boardJsonList!);
+      prefs.setStringList('revealed', revealedJsonList!);
+      prefs.setStringList('flagged', flaggedJsonList!);
+      prefs.setStringList('playTime', playtimeList!);
+      prefs.setStringList('numMines', numMinesList!);
+    });
 
-    //   boardJsonList?[widget.index!] = boardJson;
-    //   revealedJsonList?[widget.index!] = revealedJson;
-    //   flaggedJsonList?[widget.index!] = flaggedJson;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('存档成功'),
+        content: Text('游戏存档已成功保存！'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('确认'),
+          ),
+        ],
+      ),
+    );
+  }
 
-    //   prefs.setStringList('board', boardJsonList!);
-    //   prefs.setStringList('revealed', revealedJsonList!);
-    //   prefs.setStringList('flagged', flaggedJsonList!);
-    // });
+  Future<void> reBuild() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      List<String>? boardJsonList = prefs.getStringList('board');
+      List<String>? revealedJsonList = prefs.getStringList('revealed');
+      List<String>? flaggedJsonList = prefs.getStringList('flagged');
+      List<String>? playtimeList = prefs.getStringList('playTime');
+      List<String>? numMinesList = prefs.getStringList('numMines');
+
+      String boardJson = boardJsonList?[widget.index!] ?? "";
+      String revealedJson = revealedJsonList?[widget.index!] ?? "";
+      String flaggedJson = flaggedJsonList?[widget.index!] ?? "";
+      int mines = int.parse(numMinesList![widget.index!]);
+      int playtime = int.parse(playtimeList![widget.index!]);
+
+      board = List<List<int>>.from(
+          json.decode(boardJson).map((e) => List<int>.from(e)));
+      revealed = List<List<bool>>.from(
+          json.decode(revealedJson).map((e) => List<bool>.from(e)));
+      flagged = List<List<bool>>.from(
+          json.decode(flaggedJson).map((e) => List<bool>.from(e)));
+
+      numRows = board.length;
+      numCols = board[0].length;
+      numMines = mines;
+      gameOver = false;
+      win = false;
+      _playTime = playtime;
+      widget.size = numCols.toString();
+    });
+    startTimer();
   }
 }
