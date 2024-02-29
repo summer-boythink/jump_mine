@@ -10,12 +10,14 @@ class MineStore extends StatefulWidget {
 }
 
 class _MineStore extends State<MineStore> {
+  static const _storeNum = 3;
+
   final _formKey = GlobalKey<FormState>();
   String? size;
-  List<List<String>> data = [];
-  List<bool> flag = [];
-  final int _storeNum = 3;
+  List<List<String>> data = List.filled(_storeNum, List.filled(5, ""));
+  List<bool> flag = [false, false, false];
 
+  late Future<List<List<Object>>> _listFuture;
   bool _validateNumber(String value) {
     if (value.isEmpty) {
       return false;
@@ -24,7 +26,20 @@ class _MineStore extends State<MineStore> {
     return number != null && number > 0;
   }
 
-  Future<void> initializeData() async {
+  @override
+  void initState() {
+    super.initState();
+    _listFuture = initializeData();
+  }
+
+  void refreshList() {
+    // reload
+    setState(() {
+      _listFuture = initializeData();
+    });
+  }
+
+  Future<List<List<Object>>> initializeData() async {
     final prefs = await SharedPreferences.getInstance();
     List<String> boardJsonList =
         prefs.getStringList('board') ?? List.filled(_storeNum, "");
@@ -54,27 +69,30 @@ class _MineStore extends State<MineStore> {
     }
 
     for (int i = 0; i < _storeNum; i++) {
-      data.add([
+      data[i] = [
         boardJsonList[i],
         revealedJsonList[i],
         flaggedJsonList[i],
         playtimeList[i],
         numMinesList[i]
-      ]);
-      flag.add(boardJsonList[i] != "");
+      ];
+      flag[i] = (boardJsonList[i] != "");
     }
+    return [data, flag];
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-        future: initializeData(),
-        builder: (BuildContext context, AsyncSnapshot<void> snapshot) {
+        future: _listFuture,
+        builder:
+            (BuildContext context, AsyncSnapshot<List<List<Object>>> snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const CircularProgressIndicator(); // 显示一个加载指示器
           } else if (snapshot.hasError) {
             return Text('Error: ${snapshot.error}'); // 显示错误信息
           } else {
+            final items = snapshot.data![1] as List<bool>;
             return Scaffold(
               appBar: AppBar(
                 title: const Text('存档'),
@@ -90,7 +108,7 @@ class _MineStore extends State<MineStore> {
                         width: MediaQuery.of(context).size.width * 0.6,
                         height: MediaQuery.of(context).size.height * 0.2,
                         child: Card(
-                          child: flag[index]
+                          child: items[index]
                               ? InkWell(
                                   onLongPress: () async {
                                     await showDialog(
@@ -101,8 +119,8 @@ class _MineStore extends State<MineStore> {
                                             content: Text('是否删除存档${index + 1}'),
                                             actions: [
                                               TextButton(
-                                                onPressed: () {
-                                                  deleteIndex(index);
+                                                onPressed: () async {
+                                                  await deleteIndex(index);
                                                   Navigator.of(context).pop();
                                                 },
                                                 child: const Text('确认'),
@@ -169,7 +187,7 @@ class _MineStore extends State<MineStore> {
                                                   );
                                                   if (result != null &&
                                                       result) {
-                                                    await initializeData();
+                                                    refreshList();
                                                   }
                                                 }
                                               },
@@ -203,7 +221,7 @@ class _MineStore extends State<MineStore> {
     return true;
   }
 
-  void deleteIndex(int index) async {
+  Future<void> deleteIndex(int index) async {
     final prefs = await SharedPreferences.getInstance();
     List<String>? boardJsonList = prefs.getStringList('board');
     List<String>? revealedJsonList = prefs.getStringList('revealed');
@@ -230,14 +248,13 @@ class _MineStore extends State<MineStore> {
     if (numMinesList != null && index < numMinesList.length) {
       numMinesList[index] = "";
     }
-    setState(() {
-// 保存更新后的 List 到 SharedPreferences
-      prefs.setStringList('board', boardJsonList!);
-      prefs.setStringList('revealed', revealedJsonList!);
-      prefs.setStringList('flagged', flaggedJsonList!);
-      prefs.setStringList('playTime', playtimeList!);
-      prefs.setStringList('numMines', numMinesList!);
-      initializeData();
-    });
+
+    prefs.setStringList('board', boardJsonList!);
+    prefs.setStringList('revealed', revealedJsonList!);
+    prefs.setStringList('flagged', flaggedJsonList!);
+    prefs.setStringList('playTime', playtimeList!);
+    prefs.setStringList('numMines', numMinesList!);
+
+    refreshList();
   }
 }

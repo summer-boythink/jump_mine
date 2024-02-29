@@ -37,14 +37,14 @@ class _MineSweepingState extends State<MineSweeping> {
   late bool win; // 是否获胜
   late int numRows; // 行数
   late int numCols; // 列数
-  late int numMines; // 雷数
+  int? numMines; // 雷数
 
   //游戏时间
-  late int _playTime;
+  int? _playTime;
 
   String get playTime {
-    int minutes = (_playTime ~/ 60);
-    int seconds = (_playTime % 60);
+    int minutes = (_playTime! ~/ 60);
+    int seconds = (_playTime! % 60);
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
@@ -77,7 +77,7 @@ class _MineSweepingState extends State<MineSweeping> {
 
       //在棋盘上随机放置地雷，直到放置的地雷数量达到预定的 numMines
       int numMinesPlaced = 0;
-      while (numMinesPlaced < numMines) {
+      while (numMinesPlaced < numMines!) {
         //使用 Random().nextInt 方法生成两个随机数 i 和 j
         //分别用于表示棋盘中的行和列
         int i = Random().nextInt(numRows);
@@ -222,9 +222,9 @@ class _MineSweepingState extends State<MineSweeping> {
         flagged[i][j] = !flagged[i][j];
       });
       if (!flagged[i][j]) {
-        numMines++;
+        numMines = numMines! + 1;
       } else {
-        numMines--;
+        numMines = numMines! - 1;
       }
     }
   }
@@ -317,7 +317,7 @@ class _MineSweepingState extends State<MineSweeping> {
     _playTime = 0;
     _timer = Timer.periodic(duration, (timer) {
       setState(() {
-        _playTime = _playTime + 1;
+        _playTime = _playTime! + 1;
       });
     });
   }
@@ -346,14 +346,11 @@ class _MineSweepingState extends State<MineSweeping> {
         centerTitle: true,
         automaticallyImplyLeading: false,
         leading: IconButton(
-          // 在这里添加自定义的按钮
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            //todo:better pop
-            Navigator.pop(context, true);
-            Navigator.pop(context, true);
-          },
-        ),
+            // 在这里添加自定义的按钮
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pop(context, true);
+            }),
         actions: [
           IconButton(
               onPressed: () => setting(), icon: const Icon(Icons.settings))
@@ -375,7 +372,7 @@ class _MineSweepingState extends State<MineSweeping> {
                     children: [
                       Image.asset("assets/images/bomb.png"),
                       Text(
-                        "$numMines",
+                        "${numMines ?? '0'}",
                         style:
                             const TextStyle(fontSize: 28, color: Colors.white),
                       )
@@ -485,6 +482,12 @@ class _MineSweepingState extends State<MineSweeping> {
   }
 
   Future<void> reBuild() async {
+    for (var d in _dialog) {
+      if (d != null) {
+        Navigator.of(context).pop();
+        d = null; // 重置对话框对象
+      }
+    }
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       List<String>? boardJsonList = prefs.getStringList('board');
@@ -513,7 +516,8 @@ class _MineSweepingState extends State<MineSweeping> {
       win = false;
       _playTime = playtime;
       widget.size = numCols.toString();
+
+      startTimer();
     });
-    startTimer();
   }
 }
