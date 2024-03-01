@@ -134,7 +134,6 @@ class _MineSweepingState extends State<MineSweeping> {
 
         //如果翻开的是地雷
         if (board[i][j] == -1) {
-          //结束动画，将所有的地雷翻开
           for (int i2 = 0; i2 < numRows; i2++) {
             for (int j2 = 0; j2 < numCols; j2++) {
               if (board[i2][j2] == -1) {
@@ -157,6 +156,59 @@ class _MineSweepingState extends State<MineSweeping> {
           );
           //结束动画
           showDialog(context: context, builder: (_) => _dialog[0] as Widget);
+          return; // 如果翻开的是地雷，直接返回，不执行后面的代码
+        }
+
+        // 地雷跳跃：找到所有未翻开且未被标记为地雷的格子
+        List<List<int>> availableCells = [];
+        for (int i2 = 0; i2 < numRows; i2++) {
+          for (int j2 = 0; j2 < numCols; j2++) {
+            if (!revealed[i2][j2] && !flagged[i2][j2] && board[i2][j2] != -1) {
+              availableCells.add([i2, j2]);
+            }
+          }
+        }
+
+        //如果有可用的格子，将地雷随机移动到一个可用的格子上
+        if (availableCells.isNotEmpty) {
+          int randomIndex = Random().nextInt(availableCells.length);
+          List<int> newCell = availableCells[randomIndex];
+          //  int randomMine = Random().nextInt((numRows*numRows/5.floor()) as int);
+          //找到原来的地雷格子，将其变为非地雷
+          d1:
+          for (int i2 = 0; i2 < numRows; i2++) {
+            for (int j2 = 0; j2 < numCols; j2++) {
+              if (board[i2][j2] == -1 && !revealed[i2][j2]) {
+                if (board[newCell[0]][newCell[1]] != -1 &&
+                    !flagged[newCell[0]][newCell[1]]) {
+                  board[i2][j2] = 0; //移除原来的地雷
+                  board[newCell[0]][newCell[1]] = -1; //添加新的地雷
+                  break d1;
+                }
+              }
+            }
+          }
+
+          //重新计算所有格子的数字
+          for (int i2 = 0; i2 < numRows; i2++) {
+            for (int j2 = 0; j2 < numCols; j2++) {
+              if (board[i2][j2] != -1) {
+                int count = 0;
+                for (int i3 = max(0, i2 - 1);
+                    i3 <= min(numRows - 1, i2 + 1);
+                    i3++) {
+                  for (int j3 = max(0, j2 - 1);
+                      j3 <= min(numCols - 1, j2 + 1);
+                      j3++) {
+                    if (board[i3][j3] == -1) {
+                      count++;
+                    }
+                  }
+                }
+                board[i2][j2] = count;
+              }
+            }
+          }
         }
 
         // 如果点击的格子周围都没有雷就自动翻开相邻的空格
@@ -220,6 +272,58 @@ class _MineSweepingState extends State<MineSweeping> {
     if (!gameOver) {
       setState(() {
         flagged[i][j] = !flagged[i][j];
+        //     // 地雷跳跃：找到所有未翻开且未被标记为地雷的格子
+        //     List<List<int>> availableCells = [];
+        //     for (int i2 = 0; i2 < numRows; i2++) {
+        //       for (int j2 = 0; j2 < numCols; j2++) {
+        //         if (!revealed[i2][j2] && !flagged[i2][j2] && board[i2][j2] != -1) {
+        //           availableCells.add([i2, j2]);
+        //         }
+        //       }
+        //     }
+
+        //     //如果有可用的格子，将地雷随机移动到一个可用的格子上
+        //     if (availableCells.isNotEmpty) {
+        //       int randomIndex = Random().nextInt(availableCells.length);
+        //       List<int> newCell = availableCells[randomIndex];
+
+        //       //找到原来的地雷格子，将其变为非地雷
+        //       d1:
+        //       for (int i2 = 0; i2 < numRows; i2++) {
+        //         for (int j2 = 0; j2 < numCols; j2++) {
+        //           if (board[i2][j2] == -1 &&
+        //               !revealed[i2][j2] &&
+        //               !flagged[i2][j2]) {
+        //             if (board[newCell[0]][newCell[1]] != -1) {
+        //               board[i2][j2] = 0; //移除原来的地雷
+        //               board[newCell[0]][newCell[1]] = -1; //添加新的地雷
+        //               break d1;
+        //             }
+        //           }
+        //         }
+        //       }
+
+        //       //重新计算所有格子的数字
+        //       for (int i2 = 0; i2 < numRows; i2++) {
+        //         for (int j2 = 0; j2 < numCols; j2++) {
+        //           if (board[i2][j2] != -1) {
+        //             int count = 0;
+        //             for (int i3 = max(0, i2 - 1);
+        //                 i3 <= min(numRows - 1, i2 + 1);
+        //                 i3++) {
+        //               for (int j3 = max(0, j2 - 1);
+        //                   j3 <= min(numCols - 1, j2 + 1);
+        //                   j3++) {
+        //                 if (board[i3][j3] == -1) {
+        //                   count++;
+        //                 }
+        //               }
+        //             }
+        //             board[i2][j2] = count;
+        //           }
+        //         }
+        //       }
+        // }
       });
       if (!flagged[i][j]) {
         numMines = numMines! + 1;
